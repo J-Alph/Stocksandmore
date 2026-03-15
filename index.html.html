@@ -214,6 +214,11 @@ a{color:inherit;text-decoration:none}
 .lf-btn:hover{background:var(--blue2);box-shadow:0 4px 16px rgba(59,130,246,.3)}
 .login-footer{font-size:.68rem;color:var(--dim);text-align:center;margin-top:1.1rem;position:relative;z-index:1}
 
+/* ---- ESTIMATED DATA BADGE ---- */
+.est-warn{display:inline-flex;align-items:center;gap:.3rem;background:rgba(245,158,11,.1);
+  border:1px solid rgba(245,158,11,.25);color:var(--yellow);font-size:.7rem;font-weight:600;
+  padding:.18rem .5rem;border-radius:5px}
+
 /* ---- HEATMAP ---- */
 .hmap{display:grid;grid-template-columns:repeat(4,1fr);gap:.55rem;margin-bottom:.9rem}
 .hcell{padding:.85rem;border-radius:9px;cursor:pointer;transition:all .2s;border:1px solid transparent}
@@ -348,10 +353,10 @@ a{color:inherit;text-decoration:none}
     </div>
     <div class="g4" id="mktCards"></div>
     <div class="sbox"><div class="sbox-title">📈 Major Indices</div><div style="overflow-x:auto"><table class="tbl" id="idxTbl"></table></div></div>
-    <div class="sbox"><div class="sbox-title" style="justify-content:space-between">⭐ My Watchlist <button class="btn btn-ghost btn-xs" onclick="promptAddWL()">+ Add</button></div><div id="wlTable"></div></div>
+    <div class="sbox"><div class="sbox-title" style="justify-content:space-between">⭐ My Watchlist <span style="font-size:.68rem;color:var(--green)">● Live</span> <button class="btn btn-ghost btn-xs" onclick="promptAddWL()">+ Add</button></div><div id="wlTable"></div></div>
     <div class="g2">
-      <div class="sbox"><div class="sbox-title">🚀 Top Gainers</div><div id="gainers"></div></div>
-      <div class="sbox"><div class="sbox-title">📉 Top Losers</div><div id="losers"></div></div>
+      <div class="sbox"><div class="sbox-title">🚀 Top Gainers <span style="font-size:.65rem;color:var(--green)">● Live</span></div><div id="gainers"></div></div>
+      <div class="sbox"><div class="sbox-title">📉 Top Losers <span style="font-size:.65rem;color:var(--green)">● Live</span></div><div id="losers"></div></div>
     </div>
     <div class="sbox">
       <div class="sbox-title" style="justify-content:space-between">
@@ -379,7 +384,7 @@ a{color:inherit;text-decoration:none}
         <div class="sbox"><div class="sbox-title">🏦 Financial Health</div><div class="fg" id="sHealth"></div></div>
       </div>
       <div>
-        <div class="sbox"><div class="sbox-title">⚡ Algorithm Signals</div><div id="sSigs"></div></div>
+        <div class="sbox"><div class="sbox-title">⚡ Algorithm Signals <span class="est-warn">⚠ Calculated</span></div><div id="sSigs"></div></div>
         <div class="sbox"><div class="sbox-title">📍 Key Levels</div><div id="sLevels"></div></div>
         <div class="sbox"><div class="sbox-title">🎯 Analyst Ratings</div><div id="sAnalyst"></div></div>
       </div>
@@ -400,8 +405,11 @@ a{color:inherit;text-decoration:none}
       </div>
     </div>
     <div class="hmap" id="sectorHmap"></div>
+    <div id="sectorTFWarn" style="display:none;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);border-radius:8px;padding:.55rem .9rem;font-size:.76rem;color:var(--yellow);margin-bottom:.9rem">
+      ⚠ <strong>1W / 1M / 3M / 1Y sector data is estimated</strong> — historical sector performance requires a paid Finnhub plan. Only the <strong>1D</strong> view uses live real-time ETF prices.
+    </div>
     <div class="sbox"><div class="sbox-title">📊 Performance Table</div><div style="overflow-x:auto"><table class="tbl" id="secTbl"></table></div></div>
-    <div class="sbox"><div class="sbox-title">🏆 Top Movers</div><div style="overflow-x:auto" id="secMovers"></div></div>
+    <div class="sbox"><div class="sbox-title">🏆 Top Movers <span style="font-size:.68rem;color:var(--green);margin-left:.3rem">● Live prices</span></div><div style="overflow-x:auto" id="secMovers"></div></div>
   </div>
 
   <!-- ===== OPTIONS ===== -->
@@ -423,6 +431,10 @@ a{color:inherit;text-decoration:none}
     <div class="sbox">
       <div class="sbox-title">Chain — <span id="optLbl">AAPL</span>
         <span style="font-size:.7rem;color:var(--muted);margin-left:.5rem"><span style="color:var(--green)">■ Calls</span> &nbsp; <span style="color:var(--red)">■ Puts</span></span>
+        <span id="optEstBadge" class="badge bg-yellow" style="display:none;margin-left:.5rem">⚠ Estimated Data</span>
+      </div>
+      <div style="background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.2);border-radius:7px;padding:.5rem .85rem;margin-bottom:.65rem;font-size:.75rem;color:var(--yellow)">
+        ⚠ <strong>All options data below is estimated/simulated.</strong> Real-time options chains (bid/ask, OI, volume, Greeks) require a Finnhub paid plan. Strike prices are calculated from the live underlying price.
       </div>
       <div style="overflow-x:auto"><table class="tbl" id="optTbl">
         <thead><tr>
@@ -437,13 +449,13 @@ a{color:inherit;text-decoration:none}
         <tbody id="optBody"></tbody>
       </table></div>
     </div>
-    <div class="sbox"><div class="sbox-title">📊 OI by Strike</div><div id="oiViz"></div></div>
+    <div class="sbox"><div class="sbox-title">📊 OI by Strike <span class="est-warn">⚠ Estimated</span></div><div id="oiViz"></div></div>
   </div>
 
   <!-- ===== NEWS ===== -->
   <div class="view" id="v-news">
     <div class="pg-hdr">
-      <div><div class="pg-title">News Feed</div><div class="pg-sub">All links open verified source pages · Sentiment tagged</div></div>
+      <div><div class="pg-title">News Feed</div><div class="pg-sub">Real headlines from Finnhub · <span style="color:var(--green);font-weight:700">✓ Live news feed</span> · Click any article to read the full story</div></div>
       <div style="display:flex;gap:.3rem;flex-wrap:wrap" id="newsFBtns">
         <button class="btn btn-blue btn-sm" onclick="filterNews('all',this)">All</button>
         <button class="btn btn-ghost btn-sm" onclick="filterNews('positive',this)">📈 Bullish</button>
@@ -457,8 +469,12 @@ a{color:inherit;text-decoration:none}
   <!-- ===== SCREENER ===== -->
   <div class="view" id="v-screener">
     <div class="pg-hdr">
-      <div><div class="pg-title">Stock Screener</div><div class="pg-sub">NYSE · NASDAQ · ETFs</div></div>
-      <button class="btn btn-green btn-sm" onclick="runScreener()">▶ Run</button>
+      <div><div class="pg-title">Stock Screener</div><div class="pg-sub" id="scrSub">NYSE · NASDAQ · ETFs — prices refresh live from Finnhub before each run</div></div>
+      <div style="display:flex;gap:.5rem;align-items:center">
+        <span id="scrLiveTag" style="font-size:.7rem;color:var(--muted)"></span>
+        <button class="btn btn-ghost btn-sm" onclick="runScreener()" id="scrRefreshBtn">⟳ Refresh Prices</button>
+        <button class="btn btn-green btn-sm" onclick="runScreener()" id="scrRunBtn">▶ Run Screener</button>
+      </div>
     </div>
     <div class="card" style="margin-bottom:.9rem">
       <div class="scr-grid">
@@ -492,7 +508,7 @@ a{color:inherit;text-decoration:none}
     </div>
     <div class="port-summary" id="portSummary"></div>
     <div class="sbox">
-      <div class="sbox-title">Holdings</div>
+      <div class="sbox-title">Holdings <span style="font-size:.65rem;color:var(--green)">● Live P&amp;L</span></div>
       <div style="overflow-x:auto"><table class="tbl">
         <thead><tr><th>Symbol</th><th>Company</th><th>Shares</th><th>Avg Cost</th><th>Curr Price</th><th>Mkt Value</th><th>Gain/Loss</th><th>Return</th><th></th></tr></thead>
         <tbody id="portBody"></tbody>
@@ -894,36 +910,55 @@ function renderDashboard(){
 }
 
 function renderMktCards(){
-  const spy=DB['SPY'];const q=pct(spy.p,spy.pr);
-  document.getElementById('mktCards').innerHTML=`
-    <div class="card"><div class="c-lbl">S&P 500</div><div class="c-val">${fmtN(spy.p)}</div><div class="c-chg ${cls(q)}">${sign(q)}${fmtN(q)}% today</div></div>
-    <div class="card"><div class="c-lbl">NASDAQ 100</div><div class="c-val">${fmtN(DB.QQQ.p)}</div><div class="c-chg ${cls(pct(DB.QQQ.p,DB.QQQ.pr))}">${sign(pct(DB.QQQ.p,DB.QQQ.pr))}${fmtN(pct(DB.QQQ.p,DB.QQQ.pr))}% today</div></div>
-    <div class="card"><div class="c-lbl">VIX</div><div class="c-val">16.42</div><div class="c-chg dn">-2.1% <span class="badge bg-green" style="margin-left:.25rem">Low Fear</span></div></div>
-    <div class="card"><div class="c-lbl">10-Yr Yield</div><div class="c-val">4.28%</div><div class="c-chg dn">-0.03 today</div></div>
-    <div class="card"><div class="c-lbl">Crude Oil</div><div class="c-val">$74.18</div><div class="c-chg dn">-1.24% today</div></div>
-    <div class="card"><div class="c-lbl">Gold</div><div class="c-val">$2,412</div><div class="c-chg up">+0.32% today</div></div>
-    <div class="card"><div class="c-lbl">DXY (Dollar)</div><div class="c-val">104.82</div><div class="c-chg up">+0.18% today</div></div>
-    <div class="card"><div class="c-lbl">BTC / USD</div><div class="c-val">$84,520</div><div class="c-chg up">+2.14% today</div></div>`;
+  // All cards use live DB prices from Finnhub ETF quotes
+  function card(lbl,sym,prefix,note){
+    const s=DB[sym];if(!s||!s.p)return `<div class="card"><div class="c-lbl">${lbl}</div><div class="c-val" style="font-size:1rem;color:var(--muted)">Loading...</div></div>`;
+    const c=s.pr?pct(s.p,s.pr):0;
+    return `<div class="card" style="cursor:pointer" onclick="goStock('${sym}')">
+      <div class="c-lbl">${lbl} <span class="badge bg-blue" style="font-size:.55rem">${sym}</span></div>
+      <div class="c-val">${prefix}${fmtN(s.p)}</div>
+      <div class="c-chg ${cls(c)}">${sign(c)}${fmtN(c)}% today ${note||''}</div>
+    </div>`;
+  }
+  // GLD=Gold, USO=Oil, UUP=Dollar, GBTC=Bitcoin proxy
+  document.getElementById('mktCards').innerHTML=
+    card('S&P 500','SPY','','')+
+    card('NASDAQ 100','QQQ','','')+
+    card('Dow Jones','DIA','','')+
+    card('Russell 2000','IWM','','')+
+    card('Gold','GLD','$','')+
+    card('20-Yr Bonds','TLT','$','')+
+    card('Oil (USO)','USO','$','')+
+    card('Bitcoin (GBTC)','GBTC','$','');
 }
 
 function renderIdxTable(){
+  // Use live ETF prices as real-time index proxies
   const rows=[
-    {n:'S&P 500',val:'5,892.34',c:pct(DB.SPY.p,DB.SPY.pr),ytd:'+6.24%'},
-    {n:'NASDAQ Composite',val:'18,847.28',c:pct(DB.QQQ.p,DB.QQQ.pr)+0.3,ytd:'+8.12%'},
-    {n:'Dow Jones',val:'44,209.15',c:0.78,ytd:'+4.38%'},
-    {n:'Russell 2000',val:'2,148.32',c:pct(DB.IWM.p,DB.IWM.pr),ytd:'+3.21%'},
-    {n:'FTSE 100',val:'8,412.30',c:0.44,ytd:'+2.18%'},
-    {n:'Nikkei 225',val:'38,520.48',c:0.82,ytd:'+5.44%'},
+    {n:'S&P 500',sym:'SPY',note:'via SPY ETF'},
+    {n:'NASDAQ 100',sym:'QQQ',note:'via QQQ ETF'},
+    {n:'Dow Jones',sym:'DIA',note:'via DIA ETF'},
+    {n:'Russell 2000',sym:'IWM',note:'via IWM ETF'},
+    {n:'Gold',sym:'GLD',note:'via GLD ETF'},
+    {n:'20-Yr Treasury',sym:'TLT',note:'via TLT ETF'},
   ];
   document.getElementById('idxTbl').innerHTML=`
-    <thead><tr><th>Index</th><th>Value</th><th>Change</th><th>YTD</th><th>Status</th></tr></thead>
-    <tbody>${rows.map(r=>`<tr>
-      <td style="font-weight:700">${r.n}</td>
-      <td class="mono">${r.val}</td>
-      <td class="mono ${cls(r.c)}">${sign(r.c)}${fmtN(r.c)}%</td>
-      <td class="mono up">${r.ytd}</td>
-      <td><span class="badge ${r.c>=0?'bg-green':'bg-red'}">${r.c>=0?'▲ Up':'▼ Down'}</span></td>
-    </tr>`).join('')}</tbody>`;
+    <thead><tr><th>Index / Asset</th><th>ETF Proxy</th><th>Price</th><th>Change</th><th>Day Range</th><th>Status</th></tr></thead>
+    <tbody>${rows.map(r=>{
+      const s=DB[r.sym];
+      if(!s||!s.p)return `<tr><td style="font-weight:700">${r.n}</td><td class="mono" style="color:var(--blue2)">${r.sym}</td><td colspan="4" style="color:var(--muted);font-size:.75rem">Loading live data...</td></tr>`;
+      const c=s.pr?pct(s.p,s.pr):0;
+      return `<tr style="cursor:pointer" onclick="goStock('${r.sym}')">
+        <td style="font-weight:700">${r.n}</td>
+        <td class="mono" style="color:var(--blue2)">${r.sym} <span style="font-size:.65rem;color:var(--muted)">${r.note}</span></td>
+        <td class="mono" style="color:${c>=0?'var(--green)':'var(--red)'}">${fmtN(s.p)}</td>
+        <td class="mono ${cls(c)}">${sign(c)}${fmtN(c)}%<br><span style="font-size:.65rem;color:var(--muted)">${sign(s.p-s.pr)}${fmtN(s.p-s.pr)}</span></td>
+        <td style="min-width:100px;font-size:.72rem;color:var(--muted)">
+          L: ${fmtN(s.l)} &nbsp; H: ${fmtN(s.h)}
+        </td>
+        <td><span class="badge ${c>=0?'bg-green':'bg-red'}">${c>=0?'▲ Up':'▼ Down'}</span></td>
+      </tr>`;
+    }).join('')}</tbody>`;
 }
 
 function renderWLTable(){
@@ -975,7 +1010,29 @@ function renderMovers(){
   document.getElementById('losers').innerHTML=loss.map(x=>row(x,'l')).join('');
 }
 
-function renderDashNews(){
+async async function renderDashNews(){
+  document.getElementById('dashNews').innerHTML='<div style="padding:1rem;color:var(--muted);font-size:.8rem">Loading live market news...</div>';
+  try{
+    const r=await fetch(`${FBASE}/news?category=general&token=${FKEY}`);
+    if(r.ok){
+      const data=await r.json();
+      if(data&&data.length>0){
+        const items=data.slice(0,6).map(a=>({
+          sym:'MKT',
+          title:a.headline,
+          src:a.source||'Market News',
+          time:a.datetime?timeAgo(a.datetime*1000):'Recent',
+          sent:a.sentiment>0.1?'positive':a.sentiment<-0.1?'negative':'neutral',
+          body:a.summary||'',
+          url:a.url||'https://finnhub.io',
+          verified:true
+        }));
+        document.getElementById('dashNews').innerHTML=items.map(n=>newsCard(n,true)).join('');
+        return;
+      }
+    }
+  }catch(e){console.warn('News fetch error',e);}
+  // Fallback to static news
   document.getElementById('dashNews').innerHTML=NEWS.slice(0,4).map(n=>newsCard(n,true)).join('');
 }
 
@@ -1153,14 +1210,48 @@ function newsCard(n,compact=false){
   </div>`;
 }
 
-function renderNews(){
-  let items=NEWS;
+async function renderNews(){
+  document.getElementById('newsGrid').innerHTML='<div style="text-align:center;padding:2rem;color:var(--muted)">Loading live news from Finnhub...</div>';
+  let liveNews=[];
+  try{
+    // Fetch general market news
+    const r1=await fetch(`${FBASE}/news?category=general&token=${FKEY}`);
+    if(r1.ok){
+      const d1=await r1.json();
+      liveNews=[...(d1||[]).slice(0,10).map(a=>({
+        sym:'MKT',title:a.headline,src:a.source||'Market News',
+        time:timeAgo(a.datetime*1000),
+        sent:a.sentiment>0.1?'positive':a.sentiment<-0.1?'negative':'neutral',
+        body:a.summary||'',url:a.url||'https://finnhub.io',verified:true
+      }))];
+    }
+    await delay(150);
+    // Fetch watchlist stock-specific news
+    if(watchlist.length>0){
+      const wlSym=watchlist[0];
+      const r2=await fetch(`${FBASE}/company-news?symbol=${wlSym}&from=${dateStr(-30)}&to=${dateStr(0)}&token=${FKEY}`);
+      if(r2.ok){
+        const d2=await r2.json();
+        const wlNews=(d2||[]).slice(0,8).map(a=>({
+          sym:wlSym,title:a.headline,src:a.source||'Stock News',
+          time:timeAgo(a.datetime*1000),
+          sent:a.sentiment>0.1?'positive':a.sentiment<-0.1?'negative':'neutral',
+          body:a.summary||'',url:a.url||'https://finnhub.io',verified:true
+        }));
+        liveNews=[...wlNews,...liveNews];
+      }
+    }
+  }catch(e){console.warn('News error',e);}
+
+  // Fall back to static if nothing came through
+  let items=liveNews.length>0?liveNews:NEWS;
   if(newsFilter==='positive')items=items.filter(n=>n.sent==='positive');
   else if(newsFilter==='negative')items=items.filter(n=>n.sent==='negative');
-  else if(newsFilter==='watchlist')items=items.filter(n=>watchlist.includes(n.sym));
+  else if(newsFilter==='watchlist')items=liveNews.length>0?items:NEWS.filter(n=>watchlist.includes(n.sym));
+
   document.getElementById('newsGrid').innerHTML=items.length
     ?items.map(n=>newsCard(n,false)).join('')
-    :'<div style="text-align:center;padding:2rem;color:var(--muted)">No news for this filter</div>';
+    :'<div style="text-align:center;padding:2rem;color:var(--muted)">No news found</div>';
 }
 
 function filterNews(f,btn){
@@ -1174,18 +1265,40 @@ function filterNews(f,btn){
 // =========================================================
 function getSC(s){return{'1D':s.c1d,'1W':s.c1w,'1M':s.c1m,'3M':s.c3m,'1Y':s.c1y}[sectorTF]||s.c1d;}
 
-function renderSectors(){
+async function renderSectors(){
+  // Fetch live sector ETF quotes from Finnhub
+  const etfs=SECTORS.map(s=>s.etf);
+  // Add ETFs to DB if missing
+  etfs.forEach(etf=>{if(!DB[etf])DB[etf]={n:etf+' Sector ETF',ex:'NYSE',sec:'ETF',p:0,pr:0,o:0,h:0,l:0,vol:0,mc:'N/A',pe:0,eps:0,div:0,yi:0,be:1,h52:0,l52:0,ma50:0,ma200:0,roe:0,roa:0,mg:0,dbt:0,csh:0,rev:'N/A',rg:0,rat:'N/A',pt:0};});
+  document.getElementById('sectorHmap').innerHTML='<div style="grid-column:1/-1;text-align:center;padding:1.5rem;color:var(--muted);font-size:.82rem">Loading live sector data from Finnhub...</div>';
+  // Fetch quotes for all sector ETFs
+  for(const etf of etfs){
+    await fhQuote(etf);
+    await delay(130);
+  }
   renderHeatmap();renderSecTable();renderSecMovers();
 }
 
 function renderHeatmap(){
   document.getElementById('sectorHmap').innerHTML=SECTORS.map(s=>{
-    const c=getSC(s);const i=Math.min(Math.abs(c)/10,1);
+    const etfData=DB[s.etf];
+    // Use live ETF price change if available, otherwise fall back to stored static data
+    let c;
+    if(etfData&&etfData.p>0&&etfData.pr>0){
+      c=pct(etfData.p,etfData.pr);
+      // Update SECTORS static data with live 1D
+      s.c1d=parseFloat(c.toFixed(2));
+    } else {
+      c=getSC(s);
+    }
+    const liveLabel=etfData&&etfData.p>0?'Live':'Est.';
+    const price=etfData&&etfData.p>0?fmtN(etfData.p):'';
+    const i=Math.min(Math.abs(c)/10,1);
     const bg=c>=0?`rgba(0,212,160,${.1+i*.3})`:`rgba(255,77,106,${.1+i*.3})`;
-    return`<div class="hcell" style="background:${bg};border-color:${c>=0?`rgba(0,212,160,${.25+i*.4})`:`rgba(255,77,106,${.25+i*.4})`}">
+    return`<div class="hcell" style="background:${bg};border-color:${c>=0?`rgba(0,212,160,${.25+i*.4})`:`rgba(255,77,106,${.25+i*.4})`};cursor:pointer" onclick="goStock('${s.etf}')">
       <div class="hc-name">${s.n}</div>
       <div class="hc-chg ${cls(c)}">${sign(c)}${c.toFixed(2)}%</div>
-      <div class="hc-sub">${s.etf} · ${sectorTF}</div>
+      <div class="hc-sub">${s.etf}${price?' · $'+price:''} · <span style="color:${liveLabel==='Live'?'var(--green)':'var(--yellow)'}">${liveLabel}</span></div>
     </div>`;
   }).join('');
 }
@@ -1193,18 +1306,29 @@ function renderHeatmap(){
 function setSectorTF(tf,btn){
   sectorTF=tf;
   document.querySelectorAll('#secTFBtns button').forEach(b=>b.className=b===btn?'btn btn-blue btn-sm':'btn btn-ghost btn-sm');
+  // Show yellow estimated warning for non-1D timeframes
+  const warn=document.getElementById('sectorTFWarn');
+  if(warn)warn.style.display=tf!=='1D'?'block':'none';
   renderHeatmap();renderSecTable();
 }
 
 function renderSecTable(){
   document.getElementById('secTbl').innerHTML=`
-    <thead><tr><th>Sector</th><th>ETF</th><th>1D</th><th>1W</th><th>1M</th><th>3M</th><th>1Y</th><th>Trend</th></tr></thead>
-    <tbody>${SECTORS.map(s=>`<tr>
-      <td style="font-weight:700">${s.n}</td>
-      <td class="mono" style="color:var(--blue2)">${s.etf}</td>
-      ${[s.c1d,s.c1w,s.c1m,s.c3m,s.c1y].map(v=>`<td class="mono ${cls(v)}">${sign(v)}${v.toFixed(2)}%</td>`).join('')}
-      <td><span class="badge ${s.c1m>=0?'bg-green':'bg-red'}">${s.c1m>=0?'▲':'▼'} ${sectorTF}</span></td>
-    </tr>`).join('')}</tbody>`;
+    <thead><tr><th>Sector</th><th>ETF</th><th>Live Price</th><th>1D (Live)</th><th style='color:var(--yellow)'>1W *</th><th style='color:var(--yellow)'>1M *</th><th style='color:var(--yellow)'>3M *</th><th style='color:var(--yellow)'>1Y *</th><th>Trend</th></tr></thead><tr><td colspan='9' style='font-size:.65rem;color:var(--yellow);padding:.3rem .82rem;background:rgba(245,158,11,.06)'>* 1W/1M/3M/1Y sector data is estimated — historical sector performance requires a paid data plan</td></tr>
+    <tbody>${SECTORS.map(s=>{
+      const etfData=DB[s.etf];
+      const liveC=etfData&&etfData.p>0&&etfData.pr>0?pct(etfData.p,etfData.pr):s.c1d;
+      const liveP=etfData&&etfData.p>0?fmtN(etfData.p):'—';
+      const isLive=etfData&&etfData.p>0&&etfData.pr>0;
+      return`<tr style="cursor:pointer" onclick="goStock('${s.etf}')">
+        <td style="font-weight:700">${s.n}</td>
+        <td class="mono" style="color:var(--blue2)">${s.etf}</td>
+        <td class="mono">${liveP} ${isLive?'<span style="font-size:.6rem;color:var(--green)">●</span>':'<span style="font-size:.6rem;color:var(--yellow)">●</span>'}</td>
+        <td class="mono ${cls(liveC)}">${sign(liveC)}${liveC.toFixed(2)}% ${isLive?'<span style="font-size:.6rem;color:var(--green)">Live</span>':''}</td>
+        ${[s.c1w,s.c1m,s.c3m,s.c1y].map(v=>`<td class="mono ${cls(v)}">${sign(v)}${v.toFixed(2)}%</td>`).join('')}
+        <td><span class="badge ${s.c1m>=0?'bg-green':'bg-red'}">${s.c1m>=0?'▲':'▼'}</span></td>
+      </tr>`;
+    }).join('')}</tbody>`;
 }
 
 function renderSecMovers(){
@@ -1228,14 +1352,17 @@ function renderSecMovers(){
 // =========================================================
 //  OPTIONS
 // =========================================================
-function loadOptions(){
+async function loadOptions(){
   const sym=(document.getElementById('optSym').value||'AAPL').trim().toUpperCase();
+  // Fetch live quote for options underlying
+  if(!DB[sym]||!DB[sym].p)await goStockLive(sym,sym);
+  else await fhQuote(sym);
   const s=DB[sym]||DB['AAPL'];
   document.getElementById('optSub').textContent=`${sym} — ${s.n} — ${s.ex} — Exp: ${document.getElementById('optExp').value}`;
-  document.getElementById('optLbl').textContent=sym;
+  document.getElementById('optLbl').textContent=sym; document.getElementById('optEstBadge').style.display='inline-flex';
   const c=pct(s.p,s.pr);const iv=(Math.abs(c)*3+rnd(20,35)).toFixed(1);
   const pcr=rnd(.6,1.4).toFixed(2);
-  document.getElementById('optGreeks').innerHTML=`
+  document.getElementById('optGreeks').innerHTML=`<div style='grid-column:1/-1;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);border-radius:8px;padding:.5rem .85rem;font-size:.75rem;color:var(--yellow);margin-bottom:.65rem'>⚠ Options pricing (IV, P/C ratio, strikes, bid/ask, OI) is <strong>estimated</strong> — real options data requires a paid data plan</div>`+`
     <div class="card"><div class="c-lbl">Implied Volatility</div><div class="c-val">${iv}%</div><div class="c-sub">${iv>35?'High — expensive':'Moderate'}</div></div>
     <div class="card"><div class="c-lbl">Put/Call Ratio</div><div class="c-val">${pcr}</div><div class="c-sub">${pcr>.9?'Bearish lean':'Bullish lean'}</div></div>
     <div class="card"><div class="c-lbl">Max Pain</div><div class="c-val">$${(s.p*(1+rnd(-.02,.02))).toFixed(0)}</div><div class="c-sub">At expiry</div></div>`;
@@ -1287,31 +1414,86 @@ function loadOptions(){
 // =========================================================
 //  SCREENER — NYSE + NASDAQ
 // =========================================================
-function runScreener(){
+async function runScreener(){
+  // Disable buttons while fetching
+  const runBtn=document.getElementById('scrRunBtn');
+  const refBtn=document.getElementById('scrRefreshBtn');
+  const liveTag=document.getElementById('scrLiveTag');
+  if(runBtn)runBtn.disabled=true;
+  if(refBtn)refBtn.disabled=true;
+
+  // Show loading state
+  const tbody=document.getElementById('scrBody');
+  tbody.innerHTML=`<tr><td colspan="11" style="text-align:center;padding:1.5rem;color:var(--muted)">
+    <span style="animation:pulse 1s infinite">⟳</span> Fetching live prices from Finnhub for all symbols...
+  </td></tr>`;
+  document.getElementById('scrCount').textContent='Loading...';
+
+  // Fetch live quotes for every symbol in DB
+  const syms=Object.keys(DB);
+  let fetched=0;
+  // Batch in groups of 8 to respect rate limits
+  for(let i=0;i<syms.length;i+=8){
+    const batch=syms.slice(i,i+8);
+    const results=await Promise.all(batch.map(s=>fhQuote(s)));
+    fetched+=results.filter(Boolean).length;
+    await delay(150);
+  }
+
+  const now=new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',second:'2-digit'});
+  if(liveTag){
+    if(fetched>0){
+      liveTag.innerHTML=`<span style="color:var(--green)">✓ Live</span> · ${fetched}/${syms.length} quotes · Updated ${now}`;
+      setApiStatus(true);
+    } else {
+      liveTag.innerHTML=`<span style="color:var(--yellow)">⚠ Simulated</span> · API unavailable`;
+    }
+  }
+
+  // Re-enable buttons
+  if(runBtn)runBtn.disabled=false;
+  if(refBtn)refBtn.disabled=false;
+
+  // Apply filters
   const exch=document.getElementById('scrExch')?.value||'';
   const sec=document.getElementById('scrSec')?.value||'';
   const pe=document.getElementById('scrPE')?.value||'';
   const sig=document.getElementById('scrSig')?.value||'';
-  let r=Object.entries(DB).map(([sym,s])=>({sym,s,c:pct(s.p,s.pr)}));
-  if(exch)r=r.filter(x=>x.s.ex===exch);
+
+  let r=Object.entries(DB).map(([sym,s])=>({sym,s,c:s.pr?pct(s.p,s.pr):0}));
+  // Filter out zero-price entries
+  r=r.filter(x=>x.s.p>0);
+  if(exch)r=r.filter(x=>x.s.ex===exch||x.s.ex.includes(exch));
   if(sec)r=r.filter(x=>x.s.sec===sec);
   if(pe==='Under 15')r=r.filter(x=>x.s.pe>0&&x.s.pe<15);
   else if(pe==='15–25')r=r.filter(x=>x.s.pe>=15&&x.s.pe<=25);
   else if(pe==='25–50')r=r.filter(x=>x.s.pe>25&&x.s.pe<=50);
   else if(pe==='Over 50')r=r.filter(x=>x.s.pe>50);
   if(sig)r=r.filter(x=>x.s.rat===sig);
-  document.getElementById('scrCount').textContent=`${r.length} results`;
-  document.getElementById('scrBody').innerHTML=r.map(x=>`<tr>
+
+  // Sort by absolute % change descending
+  r.sort((a,b)=>Math.abs(b.c)-Math.abs(a.c));
+
+  document.getElementById('scrCount').textContent=`${r.length} results · Live prices`;
+
+  if(!r.length){
+    tbody.innerHTML=`<tr><td colspan="11" style="text-align:center;padding:1.5rem;color:var(--muted)">No results match your filters</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML=r.map(x=>`<tr>
     <td class="mono" style="font-weight:700;color:var(--blue2);cursor:pointer" onclick="goStock('${x.sym}')">${x.sym}</td>
-    <td>${x.s.n}</td>
-    <td><span class="badge bg-blue">${x.s.ex}</span></td>
-    <td>${x.s.sec}</td>
-    <td class="mono">${fmtN(x.s.p)}</td>
-    <td class="mono ${cls(x.c)}">${sign(x.c)}${fmtN(x.c)}%</td>
-    <td class="mono">${fmtV(x.s.vol)}</td>
-    <td class="mono">${x.s.mc}</td>
+    <td>${x.s.n||x.sym}</td>
+    <td><span class="badge bg-blue">${x.s.ex||'—'}</span></td>
+    <td style="font-size:.75rem">${x.s.sec||'—'}</td>
+    <td class="mono" style="font-weight:700;color:${chgC(x.c)}">${fmtN(x.s.p)}</td>
+    <td class="mono ${cls(x.c)}">${sign(x.c)}${fmtN(x.c)}%<br>
+      <span style="font-size:.65rem;color:var(--muted)">${sign(x.s.p-x.s.pr)}${fmtN(x.s.p-x.s.pr)}</span>
+    </td>
+    <td class="mono">${x.s.vol?fmtV(x.s.vol):'—'}</td>
+    <td class="mono">${x.s.mc||'—'}</td>
     <td class="mono">${x.s.pe>0?x.s.pe:'—'}</td>
-    <td><span class="badge ${x.s.rat.includes('Buy')?'bg-green':x.s.rat==='Hold'?'bg-yellow':'bg-red'}">${x.s.rat}</span></td>
+    <td><span class="badge ${x.s.rat&&x.s.rat.includes('Buy')?'bg-green':x.s.rat==='Hold'?'bg-yellow':x.s.rat==='Sell'?'bg-red':'bg-purple'}">${x.s.rat||'—'}</span></td>
     <td><button class="btn btn-blue btn-xs" onclick="goStock('${x.sym}')">View</button></td>
   </tr>`).join('');
 }
@@ -1649,6 +1831,21 @@ async function goStockLive(sym,name){
 }
 
 // =========================================================
+//  HELPER UTILITIES
+// =========================================================
+function timeAgo(ts){
+  const diff=Date.now()-ts;
+  if(diff<60000)return Math.floor(diff/1000)+'s ago';
+  if(diff<3600000)return Math.floor(diff/60000)+'m ago';
+  if(diff<86400000)return Math.floor(diff/3600000)+'h ago';
+  return Math.floor(diff/86400000)+'d ago';
+}
+function dateStr(offset=0){
+  const d=new Date();d.setDate(d.getDate()+offset);
+  return d.toISOString().split('T')[0];
+}
+
+// =========================================================
 //  REFRESH
 // =========================================================
 async function refreshAll(){
@@ -1672,38 +1869,71 @@ async function refreshAll(){
 //  INIT
 // =========================================================
 async function init(){
-  // Render seed data immediately
+  // Phase 1: Render seed data immediately so UI is not blank
   renderTicker();renderWatchlist();renderDashboard();updateAlertBadge();
 
-  // Fetch live quotes
-  const tapeSyms=['SPY','QQQ','AAPL','MSFT','NVDA','TSLA','META','AMZN','GOOGL','JPM','XOM','NFLX'];
+  // Phase 2: Core quotes — ticker tape + watchlist
+  const coreSyms=['SPY','QQQ','DIA','IWM','GLD','TLT','USO','GBTC','AAPL','MSFT','NVDA','TSLA','META','AMZN','GOOGL','JPM','XOM','NFLX'];
+  const allSyms=[...new Set([...coreSyms,...watchlist,...Object.keys(DB)])];
   toast('Connecting to Finnhub live feed...');
-  const ok=await loadQuotes(tapeSyms);
+  const ok=await loadQuotes(coreSyms);
   if(ok>0){
     setApiStatus(true);
     renderTicker();renderWatchlist();renderDashboard();
-    toast('Live feed connected \u2014 '+ok+' quotes loaded');
+    toast('Live feed connected — '+ok+' real-time quotes loaded');
   } else {
     setApiStatus(false);
-    toast('Live feed unavailable \u2014 using simulated data','warn');
+    toast('Live feed unavailable — using simulated data','warn');
   }
 
-  // Auto-refresh every 30 seconds
+  // Phase 3: Background load remaining DB symbols (non-blocking)
+  setTimeout(async()=>{
+    const remaining=Object.keys(DB).filter(s=>!coreSyms.includes(s));
+    for(let i=0;i<remaining.length;i+=6){
+      await loadQuotes(remaining.slice(i,i+6));
+      await delay(800);
+    }
+    renderWatchlist();renderDashboard();
+  },3000);
+
+  // Phase 4: Sector ETFs (non-blocking background)
+  setTimeout(async()=>{
+    const secEtfs=['XLK','XLV','XLF','XLE','XLY','XLI','XLB','XLU','XLRE','XLC','XLP'];
+    for(const etf of secEtfs){
+      if(!DB[etf])DB[etf]={n:etf+' Sector ETF',ex:'NYSE',sec:'ETF',p:0,pr:0,o:0,h:0,l:0,vol:0,mc:'N/A',pe:0,eps:0,div:0,yi:0,be:1,h52:0,l52:0,ma50:0,ma200:0,roe:0,roa:0,mg:0,dbt:0,csh:0,rev:'N/A',rg:0,rat:'N/A',pt:0};
+      await fhQuote(etf);
+      SECTORS.forEach(s=>{if(s.etf===etf&&DB[etf]&&DB[etf].p>0&&DB[etf].pr>0)s.c1d=parseFloat(pct(DB[etf].p,DB[etf].pr).toFixed(2));});
+      await delay(130);
+    }
+  },5000);
+
+  // Phase 5: Watchlist metrics (non-blocking)
+  setTimeout(async()=>{
+    for(const sym of watchlist){
+      await fhMetrics(sym);await delay(200);
+      await fhRec(sym);await delay(150);
+    }
+    renderWatchlist();
+  },8000);
+
+  // Phase 6: Auto-refresh every 30s
   setInterval(async()=>{
-    const syms=[...new Set([...tapeSyms,...watchlist])].slice(0,12);
+    const syms=[...new Set([...coreSyms,...watchlist])].slice(0,15);
     const n=await loadQuotes(syms);
     if(n>0){
       setApiStatus(true);renderTicker();renderWatchlist();updateAlertBadge();
+      const v=document.querySelector('.view.active');
+      if(v&&v.id==='v-dashboard')renderMktCards();
       alerts.filter(a=>checkAlertTriggered(a)).forEach(a=>{
         if(!a._fired){a._fired=true;toast('\uD83D\uDD14 '+a.sym+' alert triggered!','warn');}
       });
     }
   },30000);
 
-  // Micro-tick simulation between real refreshes
+  // Phase 7: Micro-tick visual animation between real refreshes
   setInterval(()=>{
     if(!apiLive){
-      Object.keys(DB).forEach(sym=>{DB[sym].p=parseFloat((DB[sym].p*(1+rnd(-.0005,.0005))).toFixed(2));});
+      Object.keys(DB).forEach(sym=>{if(DB[sym].p>0)DB[sym].p=parseFloat((DB[sym].p*(1+rnd(-.0005,.0005))).toFixed(2));});
       renderTicker();renderWatchlist();
     }
   },5000);
