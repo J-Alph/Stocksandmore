@@ -523,7 +523,7 @@ a{color:inherit;text-decoration:none}
       <div class="sbox">
         <div class="sbox-title">Add Position</div>
         <div class="g3">
-          <div><label class="lf-lbl">Symbol</label><input class="fi-inp" type="text" id="posSymInp" placeholder="e.g. AAPL"></div>
+          <div><label class="lf-lbl">Symbol <span style="font-size:.6rem;color:var(--green);font-weight:400">any NYSE/NASDAQ ticker</span></label><input class="fi-inp" type="text" id="posSymInp" placeholder="e.g. AAPL, UBER, PLTR..." oninput="this.value=this.value.toUpperCase()"></div>
           <div><label class="lf-lbl">Shares</label><input class="fi-inp" type="number" id="posShares" placeholder="100" min="0.001" step="0.001"></div>
           <div><label class="lf-lbl">Avg Cost / Share</label><input class="fi-inp" type="number" id="posCost" placeholder="150.00" min="0.01" step="0.01"></div>
         </div>
@@ -551,7 +551,7 @@ a{color:inherit;text-decoration:none}
       <div class="sbox">
         <div class="sbox-title">New Price Alert</div>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:.7rem">
-          <div><label class="lf-lbl">Symbol</label><input class="fi-inp" type="text" id="alSymInp" placeholder="AAPL"></div>
+          <div><label class="lf-lbl">Symbol</label><input class="fi-inp" type="text" id="alSymInp" placeholder="e.g. AAPL, UBER..." oninput="this.value=this.value.toUpperCase()"></div>
           <div><label class="lf-lbl">Condition</label>
             <select class="fi-inp" id="alCond">
               <option value="above">Price Above</option>
@@ -897,17 +897,34 @@ function renderWatchlist(){
   }).join('');
 }
 
-function promptAddWL(){
-  const sym=prompt('Enter ticker symbol (NYSE or NASDAQ):');
-  if(!sym)return;
-  const s=sym.trim().toUpperCase();
-  if(!DB[s]){
-    toast(`${s} not in local database — searching Yahoo Finance`,'warn');
-    window.open(`https://finance.yahoo.com/quote/${s}`,'_blank','noopener');
-    return;
+async function promptAddWL(){
+  const input=prompt('Enter ticker symbol (NYSE or NASDAQ):');
+  if(!input)return;
+  const s=input.trim().toUpperCase();
+  if(watchlist.includes(s)){toast(`${s} already in watchlist`,'warn');return;}
+
+  // If not in local DB, fetch live from Finnhub
+  if(!DB[s]||!DB[s].p){
+    toast(`Looking up ${s}...`);
+    DB[s]=DB[s]||{n:s,ex:'NYSE/NASDAQ',sec:'Unknown',p:0,pr:0,o:0,h:0,l:0,
+      vol:0,mc:'N/A',pe:0,eps:0,div:0,yi:0,be:1,h52:0,l52:0,
+      ma50:0,ma200:0,roe:0,roa:0,mg:0,dbt:0,csh:0,rev:'N/A',rg:0,rat:'N/A',pt:0};
+    const ok=await fhQuote(s);
+    if(!ok||!DB[s].p){
+      toast(`${s} not found — check the symbol and try again`,'err');
+      delete DB[s];
+      return;
+    }
+    // Fetch profile and metrics in background
+    fhProfile(s).then(()=>{renderWatchlist();renderWLTable();});
+    fhMetrics(s).then(()=>{renderWatchlist();renderWLTable();});
   }
-  if(watchlist.includes(s)){toast(`${s} already in watchlist`);return;}
-  watchlist.push(s);saveState();renderWatchlist();renderWLTable();toast(`${s} added to watchlist`);
+
+  watchlist.push(s);
+  saveState();
+  renderWatchlist();
+  renderWLTable();
+  toast(`${s} added to watchlist — $${fmtN(DB[s].p)}`);
 }
 
 function removeWL(sym){
@@ -1562,13 +1579,35 @@ function openAddPosition(){
   document.getElementById('portEmpty').style.display='none';
 }
 
-function savePosition(){
+async function savePosition(){
   const sym=document.getElementById('posSymInp').value.trim().toUpperCase();
   const shares=parseFloat(document.getElementById('posShares').value);
   const cost=parseFloat(document.getElementById('posCost').value);
-  if(!DB[sym]){toast('Symbol not found in database','err');return;}
-  if(!shares||shares<=0){toast('Enter valid share count','err');return;}
-  if(!cost||cost<=0){toast('Enter valid cost basis','err');return;}
+  if(!sym){toast('Please enter a stock symbol','err');return;}
+  if(!shares||shares<=0){toast('Enter a valid number of shares','err');return;}
+  if(!cost||cost<=0){toast('Enter a valid cost per share','err');return;}
+
+  // If symbol not in local DB, fetch it live from Finnhub
+  if(!DB[sym]||!DB[sym].p){
+    const saveBtn=document.querySelector('#addPosForm .btn-green');
+    if(saveBtn){saveBtn.textContent='Loading...';saveBtn.disabled=true;}
+    toast(`Looking up ${sym} on Finnhub...`);
+    // Create a placeholder entry first
+    DB[sym]=DB[sym]||{n:sym,ex:'NYSE/NASDAQ',sec:'Unknown',p:0,pr:0,o:0,h:0,l:0,
+      vol:0,mc:'N/A',pe:0,eps:0,div:0,yi:0,be:1,h52:0,l52:0,
+      ma50:0,ma200:0,roe:0,roa:0,mg:0,dbt:0,csh:0,rev:'N/A',rg:0,rat:'N/A',pt:0};
+    const ok=await fhQuote(sym);
+    if(saveBtn){saveBtn.textContent='Save Position';saveBtn.disabled=false;}
+    if(!ok||!DB[sym].p){
+      toast(`${sym} not found — check the ticker symbol and try again`,'err');
+      delete DB[sym];
+      return;
+    }
+    // Also fetch profile in background so name shows correctly
+    fhProfile(sym).then(()=>renderPortfolio());
+    toast(`${sym} found at $${fmtN(DB[sym].p)}`);
+  }
+
   const existing=portfolio.findIndex(p=>p.sym===sym);
   if(existing>=0){portfolio[existing]={sym,shares,cost};}
   else{portfolio.push({sym,shares,cost});}
@@ -1576,7 +1615,8 @@ function savePosition(){
   document.getElementById('addPosForm').style.display='none';
   ['posSymInp','posShares','posCost'].forEach(id=>document.getElementById(id).value='');
   renderPortfolio();
-  toast(`${sym} position saved`);
+  renderWatchlist();
+  toast(`${sym} position saved — ${shares} shares @ $${fmtN(cost)}`);
 }
 
 function removePosition(i){
@@ -1632,18 +1672,33 @@ function openAddAlert(sym=''){
   document.getElementById('alertsEmpty').style.display='none';
 }
 
-function saveAlert(){
+async function saveAlert(){
   const sym=document.getElementById('alSymInp').value.trim().toUpperCase();
   const cond=document.getElementById('alCond').value;
   const val=parseFloat(document.getElementById('alVal').value);
-  if(!DB[sym]){toast('Symbol not found','err');return;}
-  if(!val||val<=0){toast('Enter a valid value','err');return;}
+  if(!sym){toast('Please enter a stock symbol','err');return;}
+  if(!val||val<=0){toast('Enter a valid price or percentage value','err');return;}
+
+  // Auto-fetch symbol if not in DB
+  if(!DB[sym]||!DB[sym].p){
+    toast(`Looking up ${sym}...`);
+    DB[sym]=DB[sym]||{n:sym,ex:'NYSE/NASDAQ',sec:'Unknown',p:0,pr:0,o:0,h:0,l:0,
+      vol:0,mc:'N/A',pe:0,eps:0,div:0,yi:0,be:1,h52:0,l52:0,
+      ma50:0,ma200:0,roe:0,roa:0,mg:0,dbt:0,csh:0,rev:'N/A',rg:0,rat:'N/A',pt:0};
+    const ok=await fhQuote(sym);
+    if(!ok||!DB[sym].p){
+      toast(`${sym} not found — check the symbol and try again`,'err');
+      delete DB[sym];
+      return;
+    }
+  }
+
   alerts.push({sym,cond,val});
   saveState();
   document.getElementById('addAlertForm').style.display='none';
   ['alSymInp','alVal'].forEach(id=>document.getElementById(id).value='');
   renderAlerts();
-  toast(`Alert set for ${sym}`);
+  toast(`Alert set — ${sym} ${cond} $${val} (current: $${fmtN(DB[sym].p)})`);
 }
 
 function removeAlert(i){
