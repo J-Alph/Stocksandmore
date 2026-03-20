@@ -270,6 +270,88 @@ a{color:inherit;text-decoration:none}
   .stock-hero .hero-price{font-size:2rem}
 }
 </style>
+
+<!-- Firebase SDK -->
+<script type="module">
+import{initializeApp}from'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
+import{getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,onAuthStateChanged,updateProfile}from'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
+import{getFirestore,doc,setDoc,getDoc,updateDoc}from'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+
+const firebaseConfig={
+  apiKey:"AIzaSyAt1Cpe7229Wum76h-5Q19x0lXdeuSmTg4",
+  authDomain:"myapps-dd33a.firebaseapp.com",
+  projectId:"myapps-dd33a",
+  storageBucket:"myapps-dd33a.firebasestorage.app",
+  messagingSenderId:"168081008527",
+  appId:"1:168081008527:web:c264afa53e4c7dc55f4dfa"
+};
+
+const fbApp=initializeApp(firebaseConfig);
+const fbAuth=getAuth(fbApp);
+const fbDb=getFirestore(fbApp);
+
+// Expose to global scope for use in main script
+window._fbAuth=fbAuth;
+window._fbDb=fbDb;
+window._fbFns={
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
+  updateProfile,
+  doc,setDoc,getDoc,updateDoc
+};
+
+// Listen for auth state changes
+onAuthStateChanged(fbAuth,async(user)=>{
+  if(user){
+    // Load user data from Firestore
+    try{
+      const snap=await getDoc(doc(fbDb,'mp_users',user.uid));
+      if(snap.exists()){
+        const data=snap.data();
+        window._fbUserData=data;
+        // Update UI
+        const btn=document.getElementById('userBtn');
+        if(btn)btn.textContent='👤 '+(data.name||user.displayName||'User').split(' ')[0];
+        // Load cloud state into app
+        if(window._appReady){
+          window.watchlist=data.watchlist||['AAPL','TSLA','MSFT','NVDA','SPY'];
+          window.portfolio=data.portfolio||[];
+          window.alerts=data.alerts||[];
+          if(window.renderWatchlist)window.renderWatchlist();
+          if(window.renderDashboard)window.renderDashboard();
+          if(window.updateAlertBadge)window.updateAlertBadge();
+        }
+      }
+    }catch(e){console.warn('Firestore load error:',e);}
+  }
+});
+
+// Cloud save function — called whenever data changes
+window.cloudSave=async function(){
+  const user=window._fbAuth?.currentUser;
+  if(!user)return;
+  try{
+    await updateDoc(doc(fbDb,'mp_users',user.uid),{
+      watchlist:window.watchlist||[],
+      portfolio:window.portfolio||[],
+      alerts:(window.alerts||[]).map(a=>({sym:a.sym,cond:a.cond,val:a.val})),
+      lastSaved:new Date().toISOString()
+    });
+  }catch(e){
+    // Doc may not exist yet — create it
+    try{
+      await setDoc(doc(fbDb,'mp_users',user.uid),{
+        watchlist:window.watchlist||[],
+        portfolio:window.portfolio||[],
+        alerts:(window.alerts||[]).map(a=>({sym:a.sym,cond:a.cond,val:a.val})),
+        lastSaved:new Date().toISOString()
+      });
+    }catch(e2){console.warn('Cloud save error:',e2);}
+  }
+};
+</script>
 </head>
 <body>
 
@@ -320,7 +402,7 @@ a{color:inherit;text-decoration:none}
   </div>
   <div class="ticker-tape" id="tickerTape"></div>
   <div style="display:flex;align-items:center;gap:.6rem;flex-shrink:0">
-    <span style="font-size:.68rem;color:var(--muted)" id="apiStatus"><span class="api-dot api-sim" id="apiDot"></span><span id="apiLabel">Connecting...</span></span>
+    <span style="font-size:.68rem;color:var(--muted)" id="apiStatus" title="API & Cloud Status"><span class="api-dot api-sim" id="apiDot"></span><span id="apiLabel">Connecting... ☁️</span></span>
     <button class="btn btn-ghost btn-sm" onclick="refreshAll()">⟳</button>
     <button class="btn btn-ghost btn-sm" onclick="showView('portfolio')">💼</button>
     <button class="btn btn-ghost btn-sm" onclick="showView('alerts')">🔔 <span id="alertBadge"></span></button>
@@ -725,24 +807,22 @@ function toast(msg,type=''){
 
 function saveState(){
   if(!currentUser)return;
+  // Save locally as backup
   try{
-    localStorage.setItem('mp_wl_'+currentUser,JSON.stringify(watchlist));
-    localStorage.setItem('mp_port_'+currentUser,JSON.stringify(portfolio));
-    localStorage.setItem('mp_alerts_'+currentUser,JSON.stringify(alerts));
-  }catch(e){console.warn('Storage unavailable — data will not persist',e);}
+    localStorage.setItem('mp_wl_bk',JSON.stringify(watchlist));
+    localStorage.setItem('mp_port_bk',JSON.stringify(portfolio));
+  }catch(e){}
+  // Save to Firebase cloud (debounced)
+  clearTimeout(window._saveTimer);
+  window._saveTimer=setTimeout(()=>{
+    if(window.cloudSave)window.cloudSave().then(()=>console.log('Cloud saved'));
+  },1500);
 }
 
 function loadState(){
-  if(!currentUser)return;
-  try{
-    watchlist=JSON.parse(localStorage.getItem('mp_wl_'+currentUser)||'["AAPL","TSLA","MSFT","NVDA","SPY"]');
-    portfolio=JSON.parse(localStorage.getItem('mp_port_'+currentUser)||'[]');
-    alerts=JSON.parse(localStorage.getItem('mp_alerts_'+currentUser)||'[]');
-  }catch(e){
-    console.warn('Storage read failed — using defaults',e);
-    watchlist=['AAPL','TSLA','MSFT','NVDA','SPY'];
-    portfolio=[];alerts=[];
-  }
+  // Data is now loaded from Firebase in launchApp()
+  // This function kept for compatibility
+  console.log('State loaded from Firebase cloud');
 }
 
 // =========================================================
@@ -758,20 +838,36 @@ function switchLoginTab(mode){
   document.getElementById('authErr').style.display='none';
 }
 
-function doAuth(){
+async function doAuth(){
   const err=document.getElementById('authErr');
   err.style.display='none';
+  const btn=document.getElementById('authBtn');
+
+  // Wait for Firebase to be ready
+  if(!window._fbAuth||!window._fbFns){
+    showAuthErr('Connecting to server... please try again in a moment.');return;
+  }
+
   if(loginMode==='signin'){
     const email=document.getElementById('liEmail').value.trim();
     const pass=document.getElementById('liPass').value;
-    if(!email||!pass){showAuthErr('Please enter email and password.');return;}
-    let users={};
-    try{users=JSON.parse(localStorage.getItem('mp_users')||'{}');}
-    catch(e){showAuthErr('Unable to read accounts — try a non-private browser window.');return;}
-    if(!users[email]){showAuthErr('Account not found. Please register first.');return;}
-    if(users[email].pass!==btoa(pass)){showAuthErr('Incorrect password.');return;}
-    currentUser=email;
-    launchApp(users[email].name);
+    if(!email||!pass){showAuthErr('Please enter your email and password.');return;}
+    btn.textContent='Signing in...';btn.disabled=true;
+    try{
+      const cred=await window._fbFns.signInWithEmailAndPassword(window._fbAuth,email,pass);
+      currentUser=cred.user.uid;
+      // Load user data from Firestore
+      const snap=await window._fbFns.getDoc(window._fbFns.doc(window._fbDb,'mp_users',cred.user.uid));
+      const name=snap.exists()?snap.data().name:(cred.user.displayName||'User');
+      launchApp(name,snap.exists()?snap.data():null);
+    }catch(e){
+      const msg=e.code==='auth/user-not-found'||e.code==='auth/invalid-credential'?'Account not found. Please register first.':
+                e.code==='auth/wrong-password'?'Incorrect password. Please try again.':
+                e.code==='auth/too-many-requests'?'Too many attempts. Please wait a moment.':
+                'Sign in failed: '+e.message;
+      showAuthErr(msg);
+    }
+    btn.textContent='Sign In';btn.disabled=false;
   } else {
     const name=document.getElementById('riName').value.trim();
     const email=document.getElementById('riEmail').value.trim();
@@ -779,16 +875,26 @@ function doAuth(){
     if(!name||!email||!pass){showAuthErr('Please fill in all fields.');return;}
     if(pass.length<6){showAuthErr('Password must be at least 6 characters.');return;}
     if(!email.includes('@')){showAuthErr('Please enter a valid email.');return;}
-    let users2={};
-    try{users2=JSON.parse(localStorage.getItem('mp_users')||'{}');}
-    catch(e){users2={};}
-    if(users2[email]){showAuthErr('Email already registered. Please sign in.');return;}
-    const users=users2;
-    users[email]={name,pass:btoa(pass)};
-    try{localStorage.setItem('mp_users',JSON.stringify(users));}
-    catch(e){showAuthErr('Unable to save account — storage may be full or blocked.');return;}
-    currentUser=email;
-    launchApp(name);
+    btn.textContent='Creating account...';btn.disabled=true;
+    try{
+      const cred=await window._fbFns.createUserWithEmailAndPassword(window._fbAuth,email,pass);
+      await window._fbFns.updateProfile(cred.user,{displayName:name});
+      currentUser=cred.user.uid;
+      // Save initial user data to Firestore
+      await window._fbFns.setDoc(window._fbFns.doc(window._fbDb,'mp_users',cred.user.uid),{
+        name,email,
+        watchlist:['AAPL','TSLA','MSFT','NVDA','SPY'],
+        portfolio:[],alerts:[],
+        createdAt:new Date().toISOString()
+      });
+      launchApp(name,null);
+    }catch(e){
+      const msg=e.code==='auth/email-already-in-use'?'Email already registered. Please sign in.':
+                e.code==='auth/invalid-email'?'Please enter a valid email address.':
+                'Registration failed: '+e.message;
+      showAuthErr(msg);
+    }
+    btn.textContent='Create Account';btn.disabled=false;
   }
 }
 
@@ -797,24 +903,37 @@ function showAuthErr(msg){
   e.textContent=msg;e.style.display='block';
 }
 
-function launchApp(name){
+function launchApp(name, cloudData){
   document.getElementById('loginScreen').style.display='none';
   document.getElementById('mainApp').style.display='grid';
   document.getElementById('userBtn').textContent='👤 '+name.split(' ')[0];
-  loadState();
+  // Load from cloud data if available, otherwise use defaults
+  if(cloudData){
+    watchlist=cloudData.watchlist||['AAPL','TSLA','MSFT','NVDA','SPY'];
+    portfolio=cloudData.portfolio||[];
+    alerts=(cloudData.alerts||[]).map(a=>({sym:a.sym,cond:a.cond,val:a.val}));
+    toast('Welcome back, '+name.split(' ')[0]+'! Your data loaded from cloud ☁️');
+  } else {
+    watchlist=['AAPL','TSLA','MSFT','NVDA','SPY'];
+    portfolio=[];alerts=[];
+  }
+  window._appReady=true;
   init();
 }
 
-function doLogout(){
-  saveState();
-  // Clear all intervals to prevent stacking on re-login
+async function doLogout(){
+  await cloudSave(); // Save to cloud before logout
   _intervals.forEach(id=>clearInterval(id));
   _intervals=[];
   currentUser=null;
+  window._appReady=false;
+  // Firebase sign out
+  if(window._fbAuth&&window._fbFns)await window._fbFns.signOut(window._fbAuth);
   document.getElementById('mainApp').style.display='none';
   document.getElementById('loginScreen').style.display='flex';
   document.getElementById('liEmail').value='';
   document.getElementById('liPass').value='';
+  toast('Signed out. Your data is saved to the cloud.');
 }
 
 // =========================================================
